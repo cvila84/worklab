@@ -1,0 +1,7 @@
+- name: Install RKE
+  hosts: controllers
+  #  remote_user: root
+  tasks:
+  - name: Install RKE
+    apt:
+      name: rke
