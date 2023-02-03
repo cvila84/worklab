@@ -6,7 +6,7 @@ VMID=9001
 if [[ -f "$FILE" ]]; then
 	echo $FILE already downloaded
 else
-	curl -o /tmp/jammy-server-cloudimg-amd64-disk-kvm.img https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64-disk-kvm.img
+	curl -sS -o /tmp/jammy-server-cloudimg-amd64-disk-kvm.img https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64-disk-kvm.img
 fi
 qm destroy $VMID
 qm create $VMID -name ubuntu-2204-cloudinit-template -memory 2048 -net0 virtio,bridge=vmbr0 -cores 2 -sockets 1 -cpu cputype=kvm64 -description "Ubuntu 22.04 cloud image" -kvm 1 -numa 1
@@ -20,5 +20,5 @@ qm set $VMID -vcpus 1
 qm set $VMID -vga qxl
 qm set $VMID -name ubuntu-2204-cloudinit-template
 qm set $VMID -ide2 local-lvm:cloudinit
-qm set $VMID -sshkey /etc/pve/pub_keys/pub_key.pub
-
+qm set $VMID -sshkey /tmp/id_rsa_vms.pub
+qm resize $VMID virtio0 8G

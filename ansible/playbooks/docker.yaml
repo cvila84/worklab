@@ -1,0 +1,77 @@
+- name: Configure all environments
+  hosts: all
+  become: yes
+  tasks:
+  - name: Create http-proxy.sh in /etc/profile.d
+    copy:
+      dest: "/etc/profile.d/http-proxy.sh"
+      content: |
+        #!/bin/bash
+        export http_proxy=http://10.43.216.8:8080
+        export https_proxy=http://10.43.216.8:8080
+    when: init
+- name: Install docker
+  hosts: controllers
+  become: yes
+  #remote_user: root
+  environment:
+    http_proxy: http://10.43.216.8:8080
+    https_proxy: http://10.43.216.8:8080
+  tasks:
+  - name: Update packages
+    apt: update_cache=yes force_apt_get=yes cache_valid_time=3600
+    when: init
+  - name: Upgrade system
+    apt: upgrade=dist force_apt_get=yes
+    when: init
+  - name: Install docker
+    apt:
+      pkg:
+      - docker.io
+      - python3-docker
+    when: init
+  - name: Add ubuntu user in docker group
+    user:
+      name: ubuntu
+      append: yes
+      groups: docker
+    when: init
+  - name: Create custom settings directory for docker service
+    file:
+      path: "/etc/systemd/system/docker.service.d"
+      state: directory
+    when: init
+  - name: Add proxy settings for docker service
+    copy:
+      dest: "/etc/systemd/system/docker.service.d/http-proxy.conf"
+      content: |
+        [Service]
+        Environment="HTTP_PROXY=http://10.43.216.8:8080"
+        Environment="HTTPS_PROXY=http://10.43.216.8:8080"
+    when: init
+  - name: Restart docker service
+    systemd:
+      state: restarted
+      daemon_reload: true
+      name: docker
+    when: init
+  - name: Prepare for rancher container
+    file:
+      path: "/opt/rancher"
+      state: directory
+  - name: Start rancher container
+    docker_container:
+      name: rancher
+      image: rancher/rancher
+      privileged: true
+      ports:
+      - "80:80"
+      - "443:443"
+      volumes:
+      - "/opt/rancher:/var/lib/rancher"
+      restart_policy: "unless-stopped"
+      detach: true
+      env:
+        HTTP_PROXY: http://10.43.216.8:8080
+        HTTPS_PROXY: http://10.43.216.8:8080
+        NO_PROXY: localhost,127.0.0.1,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,.svc,.cluster.local

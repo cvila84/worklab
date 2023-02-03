@@ -8,7 +8,7 @@ terraform {
 }
 
 provider "proxmox" {
-  pm_api_url = "https://pve1.gemalto.com:8006/api2/json"
+  pm_api_url = "https://pve1:8006/api2/json"
 #  pm_api_token_id = "root"
 #  pm_api_token_secret = "krissfr"
   pm_user = "root@pam"
@@ -28,24 +28,24 @@ resource "proxmox_vm_qemu" "controller" {
   name = "controller"
   target_node = "pve1"
 
-  clone = "ubuntu-2004-cloudinit-template"
+  clone = "ubuntu-2204-cloudinit-template"
 
   agent = 1
   os_type = "cloud-init"
-  cores = 1
+  cores = 2
   sockets = 1
   cpu = "host"
-  memory = 1024
+  memory = 2048
   scsihw = "virtio-scsi-pci"
   bootdisk = "scsi0"
 
-  disk {
-    slot = 0
-    size = "10G"
-    type = "scsi"
-    storage = "local-lvm"
-    iothread = 1
-  }
+#  disk {
+#    slot = 0
+#    size = "10G"
+#    type = "scsi"
+#    storage = "local-lvm"
+#    iothread = 1
+#  }
 
   network {
     model = "virtio"
@@ -70,7 +70,7 @@ resource "proxmox_vm_qemu" "kube-server" {
   name = "kube-server-0${count.index + 1}"
   target_node = "pve1"
 
-  clone = "ubuntu-2004-cloudinit-template"
+  clone = "ubuntu-2204-cloudinit-template"
 
   agent = 1
   os_type = "cloud-init"
@@ -111,7 +111,7 @@ resource "proxmox_vm_qemu" "kube-agent" {
   name = "kube-agent-0${count.index + 1}"
   target_node = "pve1"
 
-  clone = "ubuntu-2004-cloudinit-template"
+  clone = "ubuntu-2204-cloudinit-template"
 
   agent = 1
   os_type = "cloud-init"
