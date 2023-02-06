@@ -9,10 +9,25 @@ variable "password" {
 
 variable "host" {
   type = string
-  default = "pve.home"
+  default = "pve1"
 }
 
 variable "node" {
   type = string
-  default = "pve"
+  default = "pve1"
+}
+
+variable "controller-ip" {
+  type = string
+  default = "ip=10.10.10.2/24,gw=10.10.10.1"
+}
+
+variable "master-ip" {
+  type = list(string)
+  default = ["ip=10.10.10.11/24,gw=10.10.10.1"]
+}
+
+variable "agent-ip" {
+  type = list(string)
+  default = ["ip=10.10.10.21/24,gw=10.10.10.1", "ip=10.10.10.22/24,gw=10.10.10.1"]
 }

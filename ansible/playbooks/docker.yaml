@@ -11,7 +11,7 @@
         export https_proxy={{ proxy }}
     when: init and proxy | length > 0
 - name: Install docker
-  hosts: controllers
+  hosts: controllers,masters,nodes
   become: yes
   #remote_user: root
   environment:
@@ -59,6 +59,12 @@
     file:
       path: "/opt/rancher"
       state: directory
+- name: Start rancher container
+  hosts: controllers
+  environment:
+    http_proxy: "{{ proxy }}"
+    https_proxy: "{{ proxy }}"
+  tasks:
   - name: Start rancher container
     docker_container:
       name: rancher
