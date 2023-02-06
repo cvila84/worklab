@@ -1,12 +1,15 @@
 #!/bin/bash
-export http_proxy=http://10.43.216.8:8080
-export https_proxy=http://10.43.216.8:8080
-FILE=/tmp/jammy-server-cloudimg-amd64-disk-kvm.img
+#export http_proxy=http://10.43.216.8:8080
+#export https_proxy=http://10.43.216.8:8080
+#FILE=/tmp/jammy-server-cloudimg-amd64-disk-kvm.img
+FILE=/tmp/jammy-server-cloudimg-amd64.img
 VMID=9001
 if [[ -f "$FILE" ]]; then
 	echo $FILE already downloaded
 else
-	curl -sS -o /tmp/jammy-server-cloudimg-amd64-disk-kvm.img https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64-disk-kvm.img
+#	curl -sS -o /tmp/jammy-server-cloudimg-amd64-disk-kvm.img https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64-disk-kvm.img
+	curl -sS -o /tmp/jammy-server-cloudimg-amd64.img https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img
+	virt-customize --install qemu-guest-agent /tmp/jammy-server-cloudimg-amd64.img
 fi
 qm destroy $VMID
 qm create $VMID -name ubuntu-2204-cloudinit-template -memory 2048 -net0 virtio,bridge=vmbr0 -cores 2 -sockets 1 -cpu cputype=kvm64 -description "Ubuntu 22.04 cloud image" -kvm 1 -numa 1

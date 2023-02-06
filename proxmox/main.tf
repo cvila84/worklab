@@ -8,11 +8,11 @@ terraform {
 }
 
 provider "proxmox" {
-  pm_api_url = "https://pve1:8006/api2/json"
+  pm_api_url = "https://${var.host}:8006/api2/json"
 #  pm_api_token_id = "root"
-#  pm_api_token_secret = "krissfr"
+#  pm_api_token_secret = ""
   pm_user = "root@pam"
-  pm_password = "krissfr"
+  pm_password = var.password
   pm_debug = "true"
   pm_tls_insecure = true
   pm_log_enable = true
@@ -26,7 +26,7 @@ provider "proxmox" {
 resource "proxmox_vm_qemu" "controller" {
   count = 1
   name = "controller"
-  target_node = "pve1"
+  target_node = var.node
 
   clone = "ubuntu-2204-cloudinit-template"
 
@@ -37,7 +37,7 @@ resource "proxmox_vm_qemu" "controller" {
   cpu = "host"
   memory = 2048
   scsihw = "virtio-scsi-pci"
-  bootdisk = "scsi0"
+#  bootdisk = "scsi0"
 
 #  disk {
 #    slot = 0
@@ -58,7 +58,8 @@ resource "proxmox_vm_qemu" "controller" {
     ]
   }
 
-  ipconfig0 = "ip=10.10.10.2/24,gw=10.10.10.1"
+  #ipconfig0 = "ip=10.10.10.2/24,gw=10.10.10.1"
+  ipconfig0 = "ip=dhcp"
   sshkeys = <<EOF
   ${var.ssh_key}
   EOF
@@ -68,7 +69,7 @@ resource "proxmox_vm_qemu" "controller" {
 resource "proxmox_vm_qemu" "kube-server" {
   count = 1
   name = "kube-server-0${count.index + 1}"
-  target_node = "pve1"
+  target_node = var.node
 
   clone = "ubuntu-2204-cloudinit-template"
 
@@ -79,7 +80,7 @@ resource "proxmox_vm_qemu" "kube-server" {
   cpu = "host"
   memory = 4096
   scsihw = "virtio-scsi-pci"
-  bootdisk = "scsi0"
+#  bootdisk = "scsi0"
 
   disk {
     slot = 0
@@ -100,7 +101,8 @@ resource "proxmox_vm_qemu" "kube-server" {
     ]
   }
 
-  ipconfig0 = "ip=10.10.10.1${count.index + 1}/24,gw=10.10.10.1"
+  #ipconfig0 = "ip=10.10.10.1${count.index + 1}/24,gw=10.10.10.1"
+  ipconfig0 = "ip=dhcp"
   sshkeys = <<EOF
   ${var.ssh_key}
   EOF
@@ -109,7 +111,7 @@ resource "proxmox_vm_qemu" "kube-server" {
 resource "proxmox_vm_qemu" "kube-agent" {
   count = 2
   name = "kube-agent-0${count.index + 1}"
-  target_node = "pve1"
+  target_node = var.node
 
   clone = "ubuntu-2204-cloudinit-template"
 
@@ -120,7 +122,7 @@ resource "proxmox_vm_qemu" "kube-agent" {
   cpu = "host"
   memory = 4096
   scsihw = "virtio-scsi-pci"
-  bootdisk = "scsi0"
+#  bootdisk = "scsi0"
 
   disk {
     slot = 0
@@ -141,7 +143,8 @@ resource "proxmox_vm_qemu" "kube-agent" {
     ]
   }
 
-  ipconfig0 = "ip=10.10.10.2${count.index + 1}/24,gw=10.10.10.1"
+  #ipconfig0 = "ip=10.10.10.2${count.index + 1}/24,gw=10.10.10.1"
+  ipconfig0 = "ip=dhcp"
   sshkeys = <<EOF
   ${var.ssh_key}
   EOF

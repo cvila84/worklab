@@ -7,16 +7,16 @@
       dest: "/etc/profile.d/http-proxy.sh"
       content: |
         #!/bin/bash
-        export http_proxy=http://10.43.216.8:8080
-        export https_proxy=http://10.43.216.8:8080
-    when: init
+        export http_proxy={{ proxy }}
+        export https_proxy={{ proxy }}
+    when: init and proxy | length > 0
 - name: Install docker
   hosts: controllers
   become: yes
   #remote_user: root
   environment:
-    http_proxy: http://10.43.216.8:8080
-    https_proxy: http://10.43.216.8:8080
+    http_proxy: "{{ proxy }}"
+    https_proxy: "{{ proxy }}"
   tasks:
   - name: Update packages
     apt: update_cache=yes force_apt_get=yes cache_valid_time=3600
@@ -46,15 +46,15 @@
       dest: "/etc/systemd/system/docker.service.d/http-proxy.conf"
       content: |
         [Service]
-        Environment="HTTP_PROXY=http://10.43.216.8:8080"
-        Environment="HTTPS_PROXY=http://10.43.216.8:8080"
-    when: init
+        Environment="HTTP_PROXY={{ proxy }}"
+        Environment="HTTPS_PROXY={{ proxy }}"
+    when: init and proxy | length > 0
   - name: Restart docker service
     systemd:
       state: restarted
       daemon_reload: true
       name: docker
-    when: init
+    when: init and proxy | length > 0
   - name: Prepare for rancher container
     file:
       path: "/opt/rancher"
@@ -72,6 +72,7 @@
       restart_policy: "unless-stopped"
       detach: true
       env:
-        HTTP_PROXY: http://10.43.216.8:8080
-        HTTPS_PROXY: http://10.43.216.8:8080
-        NO_PROXY: localhost,127.0.0.1,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,.svc,.cluster.local
+        HTTP_PROXY: "{{ (proxy | length > 0) | ternary(proxy, omit) }}"
+        HTTPS_PROXY: "{{ (proxy | length > 0) | ternary(proxy, omit) }}"
+        NO_PROXY: "{{ (proxy | length > 0) | ternary('localhost,127.0.0.1,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,.svc,.cluster.local', omit) }}"
+

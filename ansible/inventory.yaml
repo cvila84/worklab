@@ -3,13 +3,12 @@ all:
     controllers:
       hosts:
         controller:
+          #ansible_user: ubuntu
+          #ansible_host: 192.168.1.78
     masters:
       hosts:
         kube-server-01:
-          #ansible_host: 10.10.10.11
     nodes:
       hosts:
         kube-agent-01:
-          #ansible_host: 10.10.10.21
         kube-agent-02:
-          #ansible_host: 10.10.10.22
