@@ -1,0 +1,202 @@
+- name: Configure all environments
+  hosts: all
+  tasks:
+  - name: Create http-proxy.sh in /etc/profile.d
+    when: init and proxy | length > 0
+    become: yes
+    copy:
+      dest: "/etc/profile.d/http-proxy.sh"
+      content: |
+        #!/bin/bash
+        export http_proxy={{ proxy }}
+        export https_proxy={{ proxy }}
+- name: Install docker
+  hosts: controllers,masters,nodes
+  become: yes
+  #remote_user: root
+  environment:
+    http_proxy: "{{ proxy }}"
+    https_proxy: "{{ proxy }}"
+  tasks:
+  - name: Update packages
+    when: docker
+    apt: update_cache=yes force_apt_get=yes cache_valid_time=3600
+  - name: Upgrade system
+    when: docker
+    apt: upgrade=dist force_apt_get=yes
+  - name: Install docker
+    when: docker
+    apt:
+      pkg:
+      - docker.io
+      - python3-docker
+  - name: Add ubuntu user in docker group
+    when: docker
+    user:
+      name: ubuntu
+      append: yes
+      groups: docker
+  - name: Create custom settings directory for docker service
+    when: docker
+    file:
+      path: "/etc/systemd/system/docker.service.d"
+      state: directory
+  - name: Add proxy settings for docker service
+    when: docker and proxy | length > 0
+    copy:
+      dest: "/etc/systemd/system/docker.service.d/http-proxy.conf"
+      content: |
+        [Service]
+        Environment="HTTP_PROXY={{ proxy }}"
+        Environment="HTTPS_PROXY={{ proxy }}"
+  - name: Restart docker service
+    when: docker and proxy | length > 0
+    systemd:
+      state: restarted
+      daemon_reload: true
+      name: docker
+  - name: Prepare for rancher container
+    when: docker
+    file:
+      path: "/opt/rancher"
+      state: directory
+- name: Install rancher server
+  hosts: controllers
+  environment:
+    http_proxy: "{{ proxy }}"
+    https_proxy: "{{ proxy }}"
+  tasks:
+  - name: Create binds for rancher server container
+    when: docker
+    file:
+      path: "/opt/rancher"
+      state: directory
+  - name: Start rancher server container
+    when: rancher_server
+    docker_container:
+      name: rancher
+      image: rancher/rancher
+      privileged: true
+      ports:
+      - "80:80"
+      - "443:443"
+      volumes:
+      - "/opt/rancher:/var/lib/rancher"
+      restart_policy: "unless-stopped"
+      detach: true
+      env:
+        HTTP_PROXY: "{{ (proxy | length > 0) | ternary(proxy, omit) }}"
+        HTTPS_PROXY: "{{ (proxy | length > 0) | ternary(proxy, omit) }}"
+        NO_PROXY: "{{ (proxy | length > 0) | ternary('localhost,127.0.0.1,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,.svc,.cluster.local', omit) }}"
+- name: Install RKE2
+  hosts: masters
+  become: yes
+  environment:
+    http_proxy: "{{ proxy }}"
+    https_proxy: "{{ proxy }}"
+  tasks:
+  - name: Create RKE2 config directory
+    when: rke2
+    file:
+      path: "{{ item }}"
+      state: directory
+      owner: root
+      group: root
+      mode: 0755
+      recurse: yes
+    loop:
+      - '{{ "/etc/rancher/rke2" }}'
+  - name: Get hostname short
+    when: rke2
+    shell: |
+      hostname -s
+    register: hostname_short
+  - name: hostname fqdn
+    when: rke2
+    shell: |
+      hostname -f
+    register: hostname_fqdn
+  - name: Print hostname fqdn and short
+    when: rke2
+    debug:
+      msg:
+      - "hostname short '{{ hostname_short.stdout }}'"
+      - "hostname fqdn: '{{ hostname_fqdn.stdout }}'"
+  - name: Generating config.yaml
+    when: rke2
+    copy:
+      dest: '{{ "/etc/rancher/rke2/config.yaml" }}'
+      content: |
+        tls-san:
+          - "{{ hostname_short.stdout }}"
+          - "{{ hostname_fqdn.stdout }}"
+          - "{{ k8s_fqdn }}"
+        cni: "canal"
+  - name: Execute installer
+    when: rke2
+    shell: |
+      curl -sfL https://get.rke2.io | INSTALL_RKE2_CHANNEL=stable sh -
+  - name: Make sure service unit is running
+    systemd:
+      state: started
+      name: rke2-server
+  - name: Post configure rke2 service
+    when: rke2 and proxy | length > 0
+    blockinfile:
+      dest: /usr/local/lib/systemd/system/rke2-server.env
+      block: |
+        HTTP_PROXY={{ proxy }}
+        HTTPS_PROXY={{ proxy }}
+        NO_PROXY=127.0.0.0/8,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16
+  - name: Post configure rke2 agent
+    when: rke2 and proxy | length > 0
+    blockinfile:
+      dest: /usr/local/lib/systemd/system/rke2-agent.env
+      block: |
+        HTTP_PROXY={{ proxy }}
+        HTTPS_PROXY={{ proxy }}
+        NO_PROXY=127.0.0.0/8,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16
+  - name: Make sure service unit is restarted
+    when: rke2 and proxy | length > 0
+    systemd:
+      state: restarted
+      name: rke2-server
+  - name: Transfer k8s configuration
+    when: rke2
+    fetch:
+      src: /etc/rancher/rke2/rke2.yaml
+      dest: /tmp/
+      flat: true
+- name: Install client tools
+  hosts: controllers
+  environment:
+    http_proxy: "{{ proxy }}"
+    https_proxy: "{{ proxy }}"
+  tasks:
+  - name: Create temporary directory
+    when: kubectl
+    file:
+      path: "/tmp/kubectl"
+      state: directory
+  - name: Download kubectl
+    when: kubectl
+    unarchive:
+      src: https://dl.k8s.io/v1.24.10/kubernetes-client-linux-amd64.tar.gz
+      dest: /tmp/kubectl
+      remote_src: yes
+  - name: Install kubectl
+    when: kubectl
+    become: yes
+    copy:
+      src: /tmp/kubectl/kubernetes/client/bin/kubectl
+      dest: /usr/local/bin
+      remote_src: yes
+  - name: Create K8S cluster configuration directory
+    file:
+      path: "/home/ubuntu/.kube"
+      state: directory
+  - name: Transfer k8s cluster configuration
+    copy:
+      src: /tmp/rke2.yaml
+      dest: /home/ubuntu/.kube/config
+  - name: Update K8S cluster configuration for remote access
