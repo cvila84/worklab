@@ -1,0 +1,1 @@
+{"Modules":[{"Key":"kubernetes_pve1","Source":"./modules/kubernetes","Dir":"modules/kubernetes"},{"Key":"kubernetes_pve2","Source":"./modules/kubernetes","Dir":"modules/kubernetes"},{"Key":"","Source":"","Dir":"."}]}

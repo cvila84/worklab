@@ -1,0 +1,34 @@
+---
+# tasks file for k8s-client
+- name: Install client tools
+  environment:
+    http_proxy: "{{ proxy }}"
+    https_proxy: "{{ proxy }}"
+  block:
+  - name: Create temporary directory
+    when: kubectl
+    file:
+      path: "/tmp/kubectl"
+      state: directory
+  - name: Download kubectl
+    when: kubectl
+    unarchive:
+      src: https://dl.k8s.io/v1.24.10/kubernetes-client-linux-amd64.tar.gz
+      dest: /tmp/kubectl
+      remote_src: yes
+  - name: Install kubectl
+    when: kubectl
+    become: yes
+    copy:
+      src: /tmp/kubectl/kubernetes/client/bin/kubectl
+      dest: /usr/local/bin
+      remote_src: yes
+  - name: Create K8S cluster configuration directory
+    file:
+      path: "/home/ubuntu/.kube"
+      state: directory
+  - name: Transfer k8s cluster configuration
+    copy:
+      src: /tmp/rke2.yaml
+      dest: /home/ubuntu/.kube/config
+

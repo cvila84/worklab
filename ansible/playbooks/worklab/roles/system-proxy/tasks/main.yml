@@ -1,0 +1,12 @@
+---
+# tasks file for system-proxy
+- name: Create http-proxy.sh in /etc/profile.d
+  when: proxy | length > 0
+  become: yes
+  copy:
+    dest: "/etc/profile.d/http-proxy.sh"
+    content: |
+      #!/bin/bash
+      export http_proxy={{ proxy }}
+      export https_proxy={{ proxy }}
+

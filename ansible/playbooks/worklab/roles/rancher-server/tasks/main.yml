@@ -1,0 +1,32 @@
+---
+# tasks file for rancher-server
+- name: Prepare for rancher server
+  file:
+    path: "/opt/rancher"
+    state: directory
+- name: Install rancher server
+  environment:
+    http_proxy: "{{ proxy }}"
+    https_proxy: "{{ proxy }}"
+  tasks:
+- name: Create binds for rancher server container
+  file:
+    path: "/opt/rancher"
+    state: directory
+- name: Start rancher server container
+  docker_container:
+    name: rancher
+    image: rancher/rancher
+    privileged: true
+    ports:
+    - "80:80"
+    - "443:443"
+    volumes:
+    - "/opt/rancher:/var/lib/rancher"
+    restart_policy: "unless-stopped"
+    detach: true
+    env:
+      HTTP_PROXY: "{{ (proxy | length > 0) | ternary(proxy, omit) }}"
+      HTTPS_PROXY: "{{ (proxy | length > 0) | ternary(proxy, omit) }}"
+      NO_PROXY: "{{ (proxy | length > 0) | ternary('localhost,127.0.0.1,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16,.svc,.cluster.local', omit) }}"
+

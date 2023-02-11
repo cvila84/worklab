@@ -1,0 +1,41 @@
+---
+# tasks file for docker
+- block:
+  - name: Update packages
+    apt: update_cache=yes force_apt_get=yes cache_valid_time=3600
+  - name: Upgrade system
+    apt: upgrade=dist force_apt_get=yes
+  - name: Install docker
+    apt:
+      pkg:
+      - docker.io
+      - python3-docker
+  - name: Add ubuntu user in docker group
+    user:
+      name: ubuntu
+      append: yes
+      groups: docker
+  - name: Create custom settings directory for docker service
+    file:
+      path: "/etc/systemd/system/docker.service.d"
+      state: directory
+  - name: Add proxy settings for docker service
+    when: proxy | length > 0
+    copy:
+      dest: "/etc/systemd/system/docker.service.d/http-proxy.conf"
+      content: |
+        [Service]
+        Environment="HTTP_PROXY={{ proxy }}"
+        Environment="HTTPS_PROXY={{ proxy }}"
+  - name: Restart docker service
+    when: proxy | length > 0
+    systemd:
+      state: restarted
+      daemon_reload: true
+      name: docker
+  become: yes
+  #remote_user: root
+  environment:
+    http_proxy: "{{ proxy }}"
+    https_proxy: "{{ proxy }}"
+

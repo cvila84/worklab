@@ -1,0 +1,26 @@
+all:
+  hosts:
+    controller:
+      #ansible_user: ubuntu
+      #ansible_host: 10.10.10.2
+  children:
+    masters:
+      hosts:
+        kube-master-1:
+          #ansible_host: 10.10.10.11
+        kube-master-2:
+          #ansible_host: 10.10.10.12
+        kube-master-3:
+          #ansible_host: 10.10.10.13
+    worker:
+      hosts:
+        kube-worker-1:
+          #ansible_host: 10.10.10.21
+        kube-worker-2:
+          #ansible_host: 10.10.10.22
+        kube-worker-3:
+          #ansible_host: 10.10.10.23
+        kube-worker-4:
+          #ansible_host: 10.10.10.24
+        kube-worker-5:
+          #ansible_host: 10.10.10.25

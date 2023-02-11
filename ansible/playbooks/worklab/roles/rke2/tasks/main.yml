@@ -1,0 +1,75 @@
+---
+# tasks file for rke2
+- name: Install RKE2
+  become: yes
+  environment:
+    http_proxy: "{{ proxy }}"
+    https_proxy: "{{ proxy }}"
+  block:
+  - name: Create RKE2 config directory
+    file:
+      path: "{{ item }}"
+      state: directory
+      owner: root
+      group: root
+      mode: 0755
+      recurse: yes
+    loop:
+      - '{{ "/etc/rancher/rke2" }}'
+  - name: Get hostname short
+    shell: |
+      hostname -s
+    register: hostname_short
+  - name: hostname fqdn
+    shell: |
+      hostname -f
+    register: hostname_fqdn
+  - name: Print hostname fqdn and short
+    debug:
+      msg:
+      - "hostname short '{{ hostname_short.stdout }}'"
+      - "hostname fqdn: '{{ hostname_fqdn.stdout }}'"
+  - name: Generating config.yaml
+    copy:
+      dest: '{{ "/etc/rancher/rke2/config.yaml" }}'
+      content: |
+        tls-san:
+          - "{{ hostname_short.stdout }}"
+          - "{{ hostname_fqdn.stdout }}"
+          - "{{ k8s_fqdn }}"
+        cni: "canal"
+  - name: Execute installer
+    shell: |
+      curl -sfL https://get.rke2.io | INSTALL_RKE2_CHANNEL=stable sh -
+  - name: Make sure service unit is running
+    systemd:
+      state: started
+      name: rke2-server
+  - name: Post configure rke2 service
+    when: proxy | length > 0
+    blockinfile:
+      dest: /usr/local/lib/systemd/system/rke2-server.env
+      block: |
+        HTTP_PROXY={{ proxy }}
+        HTTPS_PROXY={{ proxy }}
+        NO_PROXY=127.0.0.0/8,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16
+  - name: Post configure rke2 agent
+    when: proxy | length > 0
+    blockinfile:
+      dest: /usr/local/lib/systemd/system/rke2-agent.env
+      block: |
+        HTTP_PROXY={{ proxy }}
+        HTTPS_PROXY={{ proxy }}
+        NO_PROXY=127.0.0.0/8,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16
+  - name: Make sure service unit is restarted
+    when: proxy | length > 0
+    systemd:
+      state: restarted
+      name: rke2-server
+  - name: Transfer k8s configuration
+    when: rke2
+    fetch:
+      src: /etc/rancher/rke2/rke2.yaml
+      dest: /tmp/
+      flat: true
+

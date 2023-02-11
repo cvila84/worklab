@@ -10,7 +10,8 @@ if [[ -f "/tmp/$FILE" ]]; then
 	echo /tmp/$FILE already downloaded
 else
 	curl -sS -o /tmp/$FILE https://cloud-images.ubuntu.com/$DIR/$FILE
-	virt-customize --install qemu-guest-agent /tmp/$FILE
+	apt install -y libguestfs-tools
+	virt-customize --install qemu-guest-agent -a /tmp/$FILE
 fi
 qm destroy $VMID
 qm create $VMID -name ubuntu-2204-cloudinit-template -memory 2048 -net0 virtio,bridge=vmbr0 -cores 2 -sockets 1 -cpu cputype=kvm64 -description "$NAME" -kvm 1 -numa 1
