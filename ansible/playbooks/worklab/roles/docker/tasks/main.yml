@@ -1,11 +1,13 @@
 ---
 # tasks file for docker
-- block:
-  - name: Update packages
-    apt: update_cache=yes force_apt_get=yes cache_valid_time=3600
-  - name: Upgrade system
-    apt: upgrade=dist force_apt_get=yes
-  - name: Install docker
+- name: Install docker
+  become: yes
+  #remote_user: root
+  environment:
+    http_proxy: "{{ proxy }}"
+    https_proxy: "{{ proxy }}"
+  block:
+  - name: Install packages
     apt:
       pkg:
       - docker.io
@@ -33,9 +35,4 @@
       state: restarted
       daemon_reload: true
       name: docker
-  become: yes
-  #remote_user: root
-  environment:
-    http_proxy: "{{ proxy }}"
-    https_proxy: "{{ proxy }}"
 

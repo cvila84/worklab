@@ -1,0 +1,17 @@
+---
+# tasks file for system-hosts
+- name: Populate /etc/hosts with inventory
+  become: yes
+  #remote_user: root
+  environment:
+    http_proxy: "{{ proxy }}"
+    https_proxy: "{{ proxy }}"
+  block:
+  - name: Update /etc/hosts
+    lineinfile:
+      dest: /etc/hosts
+      regexp: ".*{{ item }}$"
+      line: "{{ hostvars[item].ansible_host }} {{item}}"
+      state: present
+    with_items: '{{ groups.masters }}'
+    when: hostvars[item].ansible_host is defined 

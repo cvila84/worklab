@@ -1,6 +1,8 @@
 - hosts: controllers
   roles:
   - system-proxy
-  - docker
+#  - system-update
+  - system-hosts
+#  - docker
 #  - rancher-server
 #  - k8s-client

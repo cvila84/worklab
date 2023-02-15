@@ -1,0 +1,22 @@
+---
+# tasks file for system-update
+- name: Update system with latest packages
+  become: yes
+  #remote_user: root
+  environment:
+    http_proxy: "{{ proxy }}"
+    https_proxy: "{{ proxy }}"
+  block:
+  - name: Update packages
+    apt: update_cache=yes force_apt_get=yes cache_valid_time=3600
+  - name: Upgrade system
+    apt: upgrade=dist force_apt_get=yes
+  - name: Check if reboot is required
+    stat:
+      path: /var/run/reboot-required
+    register: reboot_required
+  - name: Reboot system
+    reboot:
+      reboot_timeout: 1200
+    when: reboot_required.stat.exists
+

@@ -1,3 +1,7 @@
-- hosts: masters
+- hosts: masters:!join
   roles:
+  - system-update
   - rke2
+- hosts: masters:&join
+  roles:
+  - system-update

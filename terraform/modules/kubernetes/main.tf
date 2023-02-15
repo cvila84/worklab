@@ -44,7 +44,7 @@ resource "proxmox_vm_qemu" "controller" {
     ]
   }
 
-  ipconfig0 = format("ip=%s%d%s,gw=%s", element(regex("(\\d+\\.\\d+\\.\\d+\\.)\\d+/\\d+", var.controller_ip),0), parseint(element(regex("\\d+\\.\\d+\\.\\d+\\.(\\d+)/\\d+", var.controller_ip),0),10)+count.index, element(regex("\\d+\\.\\d+\\.\\d+\\.\\d+(/\\d+)", var.controller_ip),0), format("%s1", element(regex("(\\d+\\.\\d+\\.\\d+\\.)\\d+/\\d+", var.controller_ip),0)))
+  ipconfig0 = format("ip=%s%d%s,gw=%s", element(regex("(\\d+\\.\\d+\\.\\d+\\.)\\d+/\\d+", var.controller_ip),0), parseint(element(regex("\\d+\\.\\d+\\.\\d+\\.(\\d+)/\\d+", var.controller_ip),0),10)+count.index, element(regex("\\d+\\.\\d+\\.\\d+\\.\\d+(/\\d+)", var.controller_ip),0), format("%s%s", element(regex("(\\d+\\.\\d+\\.\\d+\\.)\\d+/\\d+", var.controller_ip),0), var.controller_gw))
   sshkeys = <<EOF
   ${var.ssh_key}
   EOF
@@ -55,7 +55,7 @@ resource "proxmox_vm_qemu" "kube-master" {
 
   count = var.master_count
   name = format("kube-master-%d", count.index + var.master_index)
-  tags = "master"
+  tags = (count.index + var.master_index) == 1 ? "master" : "master, join"
 
   clone = "ubuntu-2204-cloudinit-template"
   os_type = "cloud-init"
@@ -73,7 +73,7 @@ resource "proxmox_vm_qemu" "kube-master" {
     size = "10G"
     type = "scsi"
     storage = "local-lvm"
-    iothread = 1
+#    iothread = 1
   }
 
   network {
@@ -87,7 +87,7 @@ resource "proxmox_vm_qemu" "kube-master" {
     ]
   }
 
-  ipconfig0 = format("ip=%s%d%s,gw=%s", element(regex("(\\d+\\.\\d+\\.\\d+\\.)\\d+/\\d+", var.master_ip),0), parseint(element(regex("\\d+\\.\\d+\\.\\d+\\.(\\d+)/\\d+", var.master_ip),0),10)+count.index, element(regex("\\d+\\.\\d+\\.\\d+\\.\\d+(/\\d+)", var.master_ip),0), format("%s1", element(regex("(\\d+\\.\\d+\\.\\d+\\.)\\d+/\\d+", var.master_ip),0)))
+  ipconfig0 = format("ip=%s%d%s,gw=%s", element(regex("(\\d+\\.\\d+\\.\\d+\\.)\\d+/\\d+", var.master_ip),0), parseint(element(regex("\\d+\\.\\d+\\.\\d+\\.(\\d+)/\\d+", var.master_ip),0),10)+count.index, element(regex("\\d+\\.\\d+\\.\\d+\\.\\d+(/\\d+)", var.master_ip),0), format("%s%s", element(regex("(\\d+\\.\\d+\\.\\d+\\.)\\d+/\\d+", var.master_ip),0), var.master_gw))
   sshkeys = <<EOF
   ${var.ssh_key}
   EOF
@@ -116,7 +116,7 @@ resource "proxmox_vm_qemu" "kube-worker" {
     size = "10G"
     type = "scsi"
     storage = "local-lvm"
-    iothread = 1
+#    iothread = 1
   }
 
   network {
@@ -130,7 +130,7 @@ resource "proxmox_vm_qemu" "kube-worker" {
     ]
   }
 
-  ipconfig0 = format("ip=%s%d%s,gw=%s", element(regex("(\\d+\\.\\d+\\.\\d+\\.)\\d+/\\d+", var.worker_ip),0), parseint(element(regex("\\d+\\.\\d+\\.\\d+\\.(\\d+)/\\d+", var.worker_ip),0),10)+count.index, element(regex("\\d+\\.\\d+\\.\\d+\\.\\d+(/\\d+)", var.worker_ip),0), format("%s1", element(regex("(\\d+\\.\\d+\\.\\d+\\.)\\d+/\\d+", var.worker_ip),0))) 
+  ipconfig0 = format("ip=%s%d%s,gw=%s", element(regex("(\\d+\\.\\d+\\.\\d+\\.)\\d+/\\d+", var.worker_ip),0), parseint(element(regex("\\d+\\.\\d+\\.\\d+\\.(\\d+)/\\d+", var.worker_ip),0),10)+count.index, element(regex("\\d+\\.\\d+\\.\\d+\\.\\d+(/\\d+)", var.worker_ip),0), format("%s%s", element(regex("(\\d+\\.\\d+\\.\\d+\\.)\\d+/\\d+", var.worker_ip),0), var.worker_gw)) 
   sshkeys = <<EOF
   ${var.ssh_key}
   EOF

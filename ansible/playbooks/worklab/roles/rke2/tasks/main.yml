@@ -6,6 +6,13 @@
     http_proxy: "{{ proxy }}"
     https_proxy: "{{ proxy }}"
   block:
+  - name: Check if previous version has to be uninstalled
+    stat:
+      path: /var/lib/rancher/rke2/server/node-token
+    register: rke2_installed
+  - name: Uninstall previous version
+    when: rke2_installed.stat.exists
+    shell: /usr/local/bin/rke2-uninstall.sh 
   - name: Create RKE2 config directory
     file:
       path: "{{ item }}"
@@ -41,22 +48,10 @@
   - name: Execute installer
     shell: |
       curl -sfL https://get.rke2.io | INSTALL_RKE2_CHANNEL=stable sh -
-  - name: Make sure service unit is running
-    systemd:
-      state: started
-      name: rke2-server
   - name: Post configure rke2 service
     when: proxy | length > 0
     blockinfile:
       dest: /usr/local/lib/systemd/system/rke2-server.env
-      block: |
-        HTTP_PROXY={{ proxy }}
-        HTTPS_PROXY={{ proxy }}
-        NO_PROXY=127.0.0.0/8,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16
-  - name: Post configure rke2 agent
-    when: proxy | length > 0
-    blockinfile:
-      dest: /usr/local/lib/systemd/system/rke2-agent.env
       block: |
         HTTP_PROXY={{ proxy }}
         HTTPS_PROXY={{ proxy }}
@@ -67,9 +62,11 @@
       state: restarted
       name: rke2-server
   - name: Transfer k8s configuration
-    when: rke2
     fetch:
-      src: /etc/rancher/rke2/rke2.yaml
+      src: "{{ item }}"
       dest: /tmp/
       flat: true
+    loop:
+    - /etc/rancher/rke2/rke2.yaml
+    - /var/lib/rancher/rke2/server/node-token
 

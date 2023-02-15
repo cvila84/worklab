@@ -14,10 +14,11 @@ provider "proxmox" {
 #  pm_api_token_secret = ""
   pm_user = "root@pam"
   pm_password = var.pve1_password
-  pm_debug = "true"
+  pm_parallel = 1
+  pm_debug = "false"
   pm_tls_insecure = true
-  pm_log_enable = true
-  pm_log_file = "terraform-plugin-proxmox.log"
+  pm_log_enable = false
+#  pm_log_file = "terraform-plugin-proxmox.log"
   pm_log_levels = {
     _default = "debug"
     _capturelog = ""
@@ -31,10 +32,11 @@ provider "proxmox" {
 #  pm_api_token_secret = ""
   pm_user = "root@pam"
   pm_password = var.pve2_password
-  pm_debug = "true"
+  pm_parallel = 1
+  pm_debug = "false"
   pm_tls_insecure = true
-  pm_log_enable = true
-  pm_log_file = "terraform-plugin-proxmox.log"
+  pm_log_enable = false
+#  pm_log_file = "terraform-plugin-proxmox.log"
   pm_log_levels = {
     _default = "debug"
     _capturelog = ""
@@ -52,15 +54,18 @@ module "kubernetes_pve1" {
   master_index = 1
   worker_count = 2
   worker_index = 1
-  controller_ip = "10.10.10.2/24"
-  master_ip = "10.10.10.11/24"
-  worker_ip = "10.10.10.21/24"
+  controller_ip = "192.168.1.11/24"
+  master_ip = "192.168.1.21/24"
+  worker_ip = "192.168.1.31/24"
+  controller_gw = "2"
+  master_gw = "2"
+  worker_gw = "2"
 }
 
 module "kubernetes_pve2" {
   source = "./modules/kubernetes"
   providers = {
-    proxmox = proxmox.pve2
+    proxmox = proxmox.pve1
   }
   pve_node = "pve2"
   controller = false
@@ -68,8 +73,11 @@ module "kubernetes_pve2" {
   master_index = 3
   worker_count = 3
   worker_index = 3
-  controller_ip = "10.10.10.3/24"
-  master_ip = "10.10.10.13/24"
-  worker_ip = "10.10.10.23/24"
+  controller_ip = "192.168.1.12/24"
+  master_ip = "192.168.1.23/24"
+  worker_ip = "192.168.1.33/24"
+  controller_gw = "3"
+  master_gw = "3"
+  worker_gw = "3"
 }
 

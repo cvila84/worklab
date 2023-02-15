@@ -1,2 +1,3 @@
 k8s_fqdn: kube.pve.worklab
 proxy: http://10.43.216.8:8080
+ansible_user: ubuntu

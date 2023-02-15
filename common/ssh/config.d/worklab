@@ -1,0 +1,54 @@
+Host controller
+  User ubuntu
+  Hostname 192.168.1.11
+  ProxyCommand ssh -W %h:%p pve1
+  IdentityFile ~/.ssh/id_rsa_vms
+
+Host kube-master-1
+  User ubuntu
+  Hostname 192.168.1.21
+  ProxyCommand ssh -W %h:%p pve1
+  IdentityFile ~/.ssh/id_rsa_vms
+
+Host kube-master-2
+  User ubuntu
+  Hostname 192.168.1.22
+  ProxyCommand ssh -W %h:%p pve1
+  IdentityFile ~/.ssh/id_rsa_vms
+
+Host kube-master-3
+  User ubuntu
+  Hostname 192.168.1.23
+  ProxyCommand ssh -W %h:%p pve1
+  IdentityFile ~/.ssh/id_rsa_vms
+
+Host kube-worker-1
+  User ubuntu
+  Hostname 192.168.1.31
+  ProxyCommand ssh -W %h:%p pve1
+  IdentityFile ~/.ssh/id_rsa_vms
+
+Host kube-worker-2
+  User ubuntu
+  Hostname 192.168.1.32
+  ProxyCommand ssh -W %h:%p pve1
+  IdentityFile ~/.ssh/id_rsa_vms
+
+Host kube-worker-3
+  User ubuntu
+  Hostname 192.168.1.33
+  ProxyCommand ssh -W %h:%p pve1
+  IdentityFile ~/.ssh/id_rsa_vms
+
+Host kube-worker-4
+  User ubuntu
+  Hostname 192.168.1.34
+  ProxyCommand ssh -W %h:%p pve1
+  IdentityFile ~/.ssh/id_rsa_vms
+
+Host kube-worker-5
+  User ubuntu
+  Hostname 192.168.1.35
+  ProxyCommand ssh -W %h:%p pve1
+  IdentityFile ~/.ssh/id_rsa_vms
+
