@@ -31,12 +31,8 @@
     shell: |
       hostname -f
     register: hostname_fqdn
-  - name: Print hostname fqdn and short
-    debug:
-      msg:
-      - "hostname short '{{ hostname_short.stdout }}'"
-      - "hostname fqdn: '{{ hostname_fqdn.stdout }}'"
-  - name: Generating config.yaml
+  - name: Generate config.yaml (first master)
+    when: join == false
     copy:
       dest: '{{ "/etc/rancher/rke2/config.yaml" }}'
       content: |
@@ -45,6 +41,17 @@
           - "{{ hostname_fqdn.stdout }}"
           - "{{ k8s_fqdn }}"
         cni: "canal"
+  - name: Generate config.yaml (join master)
+    when: join
+    copy:
+      dest: '{{ "/etc/rancher/rke2/config.yaml" }}'
+      content: |
+        server: https://{{ rke2_first_master }}:9345
+        token: {{ lookup('file', '/tmp/node-token') }}
+        tls-san:
+          - "{{ hostname_short.stdout }}"
+          - "{{ hostname_fqdn.stdout }}"
+          - "{{ k8s_fqdn }}"
   - name: Execute installer
     shell: |
       curl -sfL https://get.rke2.io | INSTALL_RKE2_CHANNEL=stable sh -

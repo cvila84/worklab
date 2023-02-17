@@ -28,4 +28,5 @@
     copy:
       src: /tmp/rke2.yaml
       dest: /home/ubuntu/.kube/config
-
+# replace 127.0.0.1 by K8S floating IP in using kubectl config
+# chmod +x /usr/local/bin/kubectl

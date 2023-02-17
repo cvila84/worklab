@@ -1,0 +1,9 @@
+- hosts: masters:&join
+  roles:
+  - system-update
+  - system-hosts
+  - role: rke2
+    vars:
+      join: true
+      rke2_first_master: kube-master-1
+

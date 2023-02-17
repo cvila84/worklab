@@ -64,7 +64,7 @@ resource "proxmox_vm_qemu" "kube-master" {
   cores = 2
   sockets = 1
   cpu = "host"
-  memory = 2048
+  memory = 3072
   scsihw = "virtio-scsi-pci"
 #  bootdisk = "scsi0"
 
